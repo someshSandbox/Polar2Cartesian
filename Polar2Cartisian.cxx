@@ -1,35 +1,13 @@
-#include "itkPoint.h"
-#include "itkAzimuthElevationToCartesianTransform.h"
 #include "itkPolarToCartesianTransform.h"
 #include <itkImageFileWriter.h>
 #include <itkImageRegionIteratorWithIndex.h>
 #include <itkResampleImageFilter.h>
-#include <itkMinimumMaximumImageCalculator.h>
-
-
  
 // Dimension 
 const unsigned int Dimension2D = 2;
 // Anatomic pixel type
 typedef unsigned int AnatomicPixelType;
 typedef itk::Image< AnatomicPixelType, Dimension2D > AnatomicImageType;
-
-/* Get Min/Max value in an image*/
-template<typename TImage, typename TPixel>
-void GetImageMinMaxValue(const typename TImage::Pointer image,
-        TPixel* minVal, TPixel* maxVal) {
-
-    typedef TImage ImageType;
-    typename itk::MinimumMaximumImageCalculator< ImageType >::Pointer
-    minmaxFilter = itk::MinimumMaximumImageCalculator< ImageType >::New();
-    minmaxFilter->SetImage(image);
-    minmaxFilter->ComputeMaximum();
-    minmaxFilter->ComputeMinimum();
-    *minVal = minmaxFilter->GetMinimum();
-    *maxVal = minmaxFilter->GetMaximum();
-    image->DisconnectPipeline();
-
-}
 
 template< typename TImage>
 void WriteImage(std::string filename, typename TImage::Pointer image) {
@@ -73,8 +51,7 @@ void CreatePolarImage(AnatomicImageType::PointType origin,
         while (!it.IsAtEnd()) 
         {          
           AnatomicImageType::IndexType index = it.GetIndex();
-          it.Set(index[1]);
-          std::cout << index[1] << std::endl;
+          it.Set(index[0]);
           ++it;
         }
 
@@ -130,8 +107,7 @@ void CreateCartesianImage(AnatomicImageType::PointType origin,
     		  	theta += 360;
     		  //it.Set(theta);
     		  if((r < radius) && ( theta <= maxTheta))
-                //it.Set(r);
-                it.Set(theta);
+                it.Set(r);
               else
             	it.Set(0);
 
@@ -148,7 +124,6 @@ void CreateCartesianImage(AnatomicImageType::PointType origin,
 template<typename TImage>
 void CartesianToPolar(const typename TImage::Pointer sourceImage, void* destImage) {
 
-    std::cout << " CartesianToPolar " << std::endl;
     typedef TImage ImageType;
     typename ImageType::Pointer *outImage = (typename ImageType::Pointer *)destImage;
 
@@ -159,21 +134,14 @@ void CartesianToPolar(const typename TImage::Pointer sourceImage, void* destImag
     typename ImageType::SizeType inputSize = sourceImage->GetLargestPossibleRegion().GetSize() ;
 
     typename ImageType::SizeType outputSize;
-    outputSize[0] = sqrt(inputSize[0]*inputSize[0] + inputSize[1]*inputSize[1]);
+    outputSize[0] = inputSize[0] / 2;;
     outputSize[1] = 360;
     typename ImageType::PointType outputOrigin;
     outputOrigin.Fill(0);
 
-    typename ImageType::PointType polarOrigin;
-    typename ImageType::IndexType polarIndex;
-    polarIndex[0] = inputSize[0] / 2;
-    polarIndex[1] = inputSize[1] / 2;
-    sourceImage->TransformIndexToPhysicalPoint(polarIndex, polarOrigin); 
-
-        /** Transform typedef. */
+    /** Transform typedef. */
     typedef itk::PolarToCartesianTransform< double, Dimension2D > PolarToCartesianTransformType;
   	PolarToCartesianTransformType::Pointer cylindricalTransform = PolarToCartesianTransformType::New();
-  	//cylindricalTransform->SetForwardCartesianToPolar();
     cylindricalTransform->SetForwardPolarToCartesian();
     
     /** Interpolator typedef. */
@@ -202,8 +170,6 @@ void CartesianToPolar(const typename TImage::Pointer sourceImage, void* destImag
 template<typename TImage>
 void PolarToCartesian(const typename TImage::Pointer sourceImage, void* destImage) {
 
-    std::cout << " PolarToCartesian " << std::endl;
-
     typedef TImage ImageType;
     typename ImageType::Pointer *outImage = (typename ImageType::Pointer *)destImage;
 
@@ -222,7 +188,6 @@ void PolarToCartesian(const typename TImage::Pointer sourceImage, void* destImag
         /** Transform typedef. */
     typedef itk::PolarToCartesianTransform< double, Dimension2D > PolarToCartesianTransformType;
     PolarToCartesianTransformType::Pointer cylindricalTransform = PolarToCartesianTransformType::New();
-    //cylindricalTransform->SetForwardPolarToCartesian();
     cylindricalTransform->SetForwardCartesianToPolar();    /** Interpolator typedef. */
     typedef itk::LinearInterpolateImageFunction< ImageType, double > DefaultInterpolatorType;
     typedef typename DefaultInterpolatorType::Pointer InterpolatorPointer;
@@ -269,6 +234,12 @@ int main(int, char*[])
                          pImg);
   WriteImage<AnatomicImageType>("Polar.nii", polarImage);
 
+  AnatomicImageType::Pointer polar2CartImage = NULL;
+  pImg = &polar2CartImage;
+  PolarToCartesian<AnatomicImageType>(polarImage, pImg);
+  WriteImage<AnatomicImageType>("Polar2Cart.nii", polar2CartImage); 
+
+
   AnatomicImageType::Pointer cartImage = NULL;
   pImg = &cartImage;
   CreateCartesianImage( origin, 
@@ -284,15 +255,6 @@ int main(int, char*[])
   pImg = &cart2PolarImage;
   CartesianToPolar<AnatomicImageType>(cartImage, pImg);
   WriteImage<AnatomicImageType>("Cart2Polar.nii", cart2PolarImage); 
-
-  AnatomicImageType::Pointer polar2CartImage = NULL;
-  pImg = &polar2CartImage;
-  PolarToCartesian<AnatomicImageType>(polarImage, pImg);
-  WriteImage<AnatomicImageType>("Polar2Cart.nii", polar2CartImage); 
-
-
-
-
 
 
   return EXIT_SUCCESS;
