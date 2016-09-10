@@ -6,13 +6,13 @@ ENDIF(COMMAND CMAKE_POLICY)
 
 
 # This project is designed to be built outside the Insight source tree.
-PROJECT(polar2Cartisian)
+PROJECT(polar2Cartesian)
 
 # Find ITK.
 FIND_PACKAGE(ITK REQUIRED)
 INCLUDE(${ITK_USE_FILE})
 
 
-ADD_EXECUTABLE(polar2Cartisian Polar2Cartisian.cxx )
+ADD_EXECUTABLE(polar2Cartesian Polar2Cartesian.cxx )
 
-TARGET_LINK_LIBRARIES(polar2Cartisian  ${ITK_LIBRARIES})
+TARGET_LINK_LIBRARIES(polar2Cartesian  ${ITK_LIBRARIES})
