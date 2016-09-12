@@ -183,12 +183,13 @@ void PolarToCartesian(const typename TImage::Pointer sourceImage, void* destImag
   typename ImageType::SizeType outputSize;
   typename ImageType::SizeType inputSize = sourceImage->GetLargestPossibleRegion().GetSize() ;
   //sourceImage->Print(std::cout);
-  outputSize[0] = 2 * inputSize[0];
-  outputSize[1] = 2 * inputSize[0];
+  double radius = std::sqrt(2*inputSize[0]*inputSize[0]);
+  outputSize[0] = 2 * radius;
+  outputSize[1] = 2 * radius;
   typename ImageType::PointType outputOrigin;
   outputOrigin.Fill(0);
-  outputOrigin[0] = -(double)(inputSize[0]);
-  outputOrigin[1] = -(double)(inputSize[0]);
+  outputOrigin[0] = -(double)(radius);
+  outputOrigin[1] = -(double)(radius);
 
   /** Transform typedef. */
   typedef itk::PolarToCartesianTransform< double, Dimension2D > PolarToCartesianTransformType;
