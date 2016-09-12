@@ -96,6 +96,8 @@ public:
   typedef typename Superclass::ParametersType      ParametersType;
   typedef typename Superclass::FixedParametersType FixedParametersType;
 
+  typedef typename Superclass::TransformCategoryType TransformCategoryType;
+
   /** Jacobian type.   */
   typedef typename Superclass::JacobianType JacobianType;
 
@@ -151,6 +153,11 @@ public:
    *  coordinates.  */
   OutputPointType TransformCartesianToPolar(const OutputPointType & point) const;
 
+ virtual TransformCategoryType GetTransformCategory() const ITK_OVERRIDE
+  {
+       return Self::UnknownTransformCategory;
+  }
+   
 
 protected:
   /** Create an PolarToCartesianTransform object. */
